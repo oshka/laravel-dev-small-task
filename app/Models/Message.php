@@ -26,4 +26,9 @@ class Message extends Model
     {
         return $this->morphedByMany(Teacher::class, 'recipient', 'message_recipients')->withTimestamps();
     }
+
+    public function getRecipientCountAttribute()
+    {
+        return $this->students()->count() + $this->teachers->count();
+    }
 }
