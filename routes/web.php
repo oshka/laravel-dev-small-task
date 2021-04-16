@@ -18,3 +18,7 @@ Route::get('/', function () {
 });
 
 Route::resource('messages', MessageController::class);
+
+Route::get('/messages/{id}/send', [MessageController::class, 'send'])->name('messages.send');
+
+

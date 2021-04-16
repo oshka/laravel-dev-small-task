@@ -143,6 +143,11 @@ class MessageController extends Controller
      */
     public function destroy(Message $message)
     {
-        //
+        $message->students()->detach();
+        $message->teachers()->detach();
+        $message->delete();
+
+        return redirect()->route('messages.index')
+            ->with('success', 'Message deleted successfully');
     }
 }
