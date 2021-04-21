@@ -1,9 +1,9 @@
-#Laravel Developer small task
-##Preparation
+# Laravel Developer small task
+## Preparation
 1. Create public repository (Github, Gitlab..)
 2. Install latest Laravel and push to your repository
 3. For next changes use separate meaningful commits
-##Task description
+## Task description
    Create simple application WITHOUT AUTH that has following functionality:
 1. Store **teachers**. Seed 10 teachers with factory.
 2. Store **students**. Seed 10 students with factory.
@@ -19,13 +19,13 @@
    send action you push this Mail message to queue(any driver) and only when queue
    job is successful $message->sent = true; Email should be received by all recipient
    emails.
-##Use case
+## Use case
    Create new message (fill subject and body, select 1 teacher and 3 students as recipients),
    save message. Now you see message in the table. Click Send on message
    ($message->sent == false on that moment, message pushed to queue). Refresh the page
    and see that message is sent ($message->sent == true). You check log or mailtrap and see
    4 messages. Profit)
-##Database
+## Database
    **teachers** and **students** tables are the same
 * firstname
 * lastname
@@ -39,7 +39,7 @@ message_recipients
 * message_id
 * recipient (morph) recipient_id, recipient_type
 
-##Recommendations
+## Recommendations
 Don’t care about styles at all. Just use Bootstrap and default tables, inputs...
 
 Think how to optimize your sql queries. Use traits.
