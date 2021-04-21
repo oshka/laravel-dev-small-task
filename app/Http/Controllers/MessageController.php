@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Message;
-use App\Models\MessageRecipient;
 use App\Models\Student;
 use App\Models\Teacher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Jobs\SendBulkQueueEmail;
+use App\Jobs\SetMessageSend;
+use Illuminate\Support\Facades\Bus;
 
 class MessageController extends Controller
 {
@@ -48,7 +50,6 @@ class MessageController extends Controller
      */
     public function store(Request $request)
     {
-
         $request->validate([
             'students' => 'array|required_without:teachers',
             'teachers' => 'array|required_without:students',
@@ -75,9 +76,32 @@ class MessageController extends Controller
      * @param \App\Models\Message $message
      * @return \Illuminate\Http\Response
      */
-    public function send(Message $message)
+    public function send($id)
     {
-        //
+        $message = Message::find($id);
+
+        //get message reciepient emails
+        $selected_students_emails = $message->students()->pluck('email')->toArray();
+        $selected_teachers_emails = $message->teachers()->pluck('email')->toArray();
+        $recipients = array_merge($selected_students_emails, $selected_teachers_emails);
+        if (count($recipients) == 0) {
+            return redirect()->back()->with('success', 'No recipients');
+        } else {
+            $mailData = new \stdClass();
+            $mailData->subject = $message->subject;
+            $mailData->recipients = $recipients;
+            $mailData->email_template = Storage::get('/messages/' . $message->body);
+
+            // send all mail in the queue.
+            // then set message 'send' property to true
+            Bus::chain([
+                new SendBulkQueueEmail($mailData),
+                new SetMessageSend($message->id)
+            ])->dispatch();
+
+            return redirect()->back()->with('success', 'Bulk mail with subject "' . $message->subject . '" send successfully in the background...');
+        }
+
     }
 
     /**
@@ -88,15 +112,10 @@ class MessageController extends Controller
      */
     public function edit(Message $message)
     {
-        $selected_students_array = MessageRecipient::where('message_id', $message->id)->where('recipient_type', '=', 'App\Models\Student')->get(array('recipient_id as id'))->toArray();
-        $selected_students = array_map(function ($a) {
-            return $a['id'];
-        }, $selected_students_array);
 
-        $selected_teachers_array = MessageRecipient::where('message_id', $message->id)->where('recipient_type', '=', 'App\Models\Teacher')->get(array('recipient_id as id'))->toArray();
-        $selected_teachers = array_map(function ($a) {
-            return $a['id'];
-        }, $selected_teachers_array);
+        $selected_students = $message->students()->pluck('id')->toArray();
+
+        $selected_teachers = $message->teachers()->pluck('id')->toArray();
 
         $students = Student::all();
         $teachers = Teacher::all();
@@ -124,12 +143,8 @@ class MessageController extends Controller
         ]);
         $message->update($request->all());
 
-        if ($request->request->get('students')) {
-            $message->students()->sync($request->request->get('students'));
-        }
-        if ($request->request->get('teachers')) {
-            $message->teachers()->sync($request->request->get('teachers'));
-        }
+        $message->students()->sync($request->request->get('students'));
+        $message->teachers()->sync($request->request->get('teachers'));
 
         return redirect()->route('messages.index')
             ->with('success', 'Message updated successfully');
@@ -150,4 +165,6 @@ class MessageController extends Controller
         return redirect()->route('messages.index')
             ->with('success', 'Message deleted successfully');
     }
+
+
 }

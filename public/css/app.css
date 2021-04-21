@@ -10139,11 +10139,9 @@ a.text-dark:hover, a.text-dark:focus {
         border-color: #dee2e6;
     }
 }
-
 nav[aria-label="Pagination Navigation"] > div {
     margin-bottom: 10px;
 }
-
 nav[aria-label="Pagination Navigation"] svg {
     height: 20px;
 }
